@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Enrollment Tracker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 900px; }
+    h2 { margin-top: 2rem; font-size: 1.15rem; border-bottom: 2px solid #e5e7eb; padding-bottom: .3rem; }
+    h3 { margin: 1.5rem 0 .3rem; font-size: 1.05rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+    button { padding: .5rem .8rem; cursor: pointer; border: 1px solid #ccc; background: #f9fafb; border-radius: 4px; }
+    button:hover { background: #f0f0f0; }
+    button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; }
+    th { background: #f3f4f6; }
+    #desc { margin-top: 1.5rem; color: #555; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Student Course Enrollment Tracker</h1>
+
+  <h2>Tables</h2>
+  <div class="row" id="tableButtons"></div>
+
+  <h2>Nested Queries</h2>
+  <div class="row" id="queryButtons"></div>
+
+  <p id="desc"></p>
+  <div id="output"></div>
+
+<script>
+const TABLES = [
+  { label: "Students",    desc: "students table (id, name, email)",                     url: "/api/tables/students" },
+  { label: "Instructors", desc: "instructors table (id, name)",                         url: "/api/tables/instructors" },
+  { label: "Courses",     desc: "courses table (id, name, instructor_id)",              url: "/api/tables/courses" },
+  { label: "Enrollments", desc: "enrollments table (id, student_id, course_id, score)", url: "/api/tables/enrollments" },
+];
+
+const QUERIES = [
+  { label: "Above Course Average", desc: "Students who scored above their own course's average (correlated subquery in WHERE)", url: "/api/q1/above-course-average" },
+  { label: "Popular Courses",      desc: "Courses with above-average enrollment (subquery in HAVING)",                          url: "/api/q2/popular-courses" },
+  { label: "Top Per Course",       desc: "The highest scorer in each course (MAX in correlated subquery)",                      url: "/api/q4/top-per-course" },
+  { label: "Enrolled Students",    desc: "Students with at least one enrollment (EXISTS)",                                      url: "/api/q6/enrolled-students" },
+  { label: "Empty Courses",        desc: "Courses with zero enrollments (NOT EXISTS)",                                          url: "/api/q7/empty-courses" },
+  { label: "Score Rankings",       desc: "Every score with its rank in the course (scalar subquery in SELECT)",                  url: "/api/q8/ranked-scores", groupBy: "course" },
+];
+
+function makeButtons(items, containerId) {
+  const container = document.getElementById(containerId);
+  items.forEach(item => {
+    const b = document.createElement("button");
+    b.textContent = item.label;
+    b.onclick = () => load(item, b);
+    container.appendChild(b);
+  });
+}
+
+makeButtons(TABLES, "tableButtons");
+makeButtons(QUERIES, "queryButtons");
+
+async function load(item, btn) {
+  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("desc").textContent = item.desc;
+  const out = document.getElementById("output");
+  out.textContent = "Loading...";
+  try {
+    const res = await fetch(item.url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    render(await res.json(), item.groupBy);
+  } catch (err) {
+    out.textContent = "Error: " + err.message;
+  }
+}
+
+function tableHTML(rows, cols) {
+  const head = "<tr>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr>";
+  const body = rows.map(r =>
+    "<tr>" + cols.map(c => `<td>${r[c] ?? ""}</td>`).join("") + "</tr>"
+  ).join("");
+  return `<table>${head}${body}</table>`;
+}
+
+function render(rows, groupBy) {
+  const out = document.getElementById("output");
+  if (!rows.length) { out.textContent = "No results."; return; }
+
+  if (!groupBy) {
+    out.innerHTML = tableHTML(rows, Object.keys(rows[0]));
+    return;
+  }
+
+  // One table per distinct value of the groupBy column
+  const groups = {};
+  rows.forEach(r => {
+    if (!groups[r[groupBy]]) groups[r[groupBy]] = [];
+    groups[r[groupBy]].push(r);
+  });
+  const cols = Object.keys(rows[0]).filter(c => c !== groupBy);
+  out.innerHTML = Object.entries(groups)
+    .map(([name, rs]) => `<h3>${name}</h3>` + tableHTML(rs, cols))
+    .join("");
+}
+</script>
+</body>
+</html>
