@@ -7,48 +7,8 @@ SQL so the nesting stays visible.
 The frontend is a single HTML page with two sections: buttons to view the four raw
 database tables, and buttons to run each nested query.
 
-**Stack:** FastAPI · PostgreSQL 18 · plain HTML/CSS/JavaScript
 
-## Setup
 
-**1. Create the database**
-
-```powershell
-psql -U postgres -c "CREATE DATABASE enrollment_tracker;"
-```
-
-**2. Install dependencies**
-
-```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-**3. Add credentials**
-
-Create a `.env` file in the project root:
-
-```
-DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/enrollment_tracker
-```
-
-Percent-encode special characters in the password (`@` becomes `%40`).
-
-**4. Create tables and load data**
-
-```powershell
-psql -U postgres -d enrollment_tracker -f schema.sql
-python seed.py
-```
-
-**5. Run**
-
-```powershell
-uvicorn main:app --reload
-```
-
-Open http://127.0.0.1:8000 (API docs at `/docs`).
 
 ## Folder Structure
 
