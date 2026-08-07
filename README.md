@@ -53,8 +53,7 @@ Open http://127.0.0.1:8000 (API docs at `/docs`).
 ## Folder Structure
 
 ```
-├── .env                 # Database password (not committed)
-├── .gitignore
+
 ├── requirements.txt     # Python packages
 ├── schema.sql           # Creates the 4 tables
 ├── seed.py              # Loads sample data
